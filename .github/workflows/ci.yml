@@ -15,9 +15,18 @@ jobs:
           - { prettyname: Windows, fullname: windows-latest }
           - { prettyname: Linux, fullname: ubuntu-latest }
     steps:
-      - name: Cache Bazel directory
+      - name: Cache Bazel directory (Windows)
         uses: actions/cache@v2
-        if: ${{ always() }}
+        if: ${{ matrix.os.prettyname == 'Windows' }}
+        env:
+          cache-name: bazel-cache
+        with:
+          path: C:\_bzl
+          key: ${{runner.os}}-${{env.cache-name}}-dev
+
+      - name: Cache Bazel directory (*nix)
+        uses: actions/cache@v2
+        if: ${{ matrix.os.prettyname != 'Windows' }}
         env:
           cache-name: bazel-cache
         with:
@@ -94,3 +103,9 @@ jobs:
         with:
           name: TestResults-${{matrix.os.prettyname}}
           path: ${{github.workspace}}/src/Akihabara.Tests/TestResults/TestResults-${{matrix.os.prettyname}}.trx
+
+      - name: Stop Bazel Server
+        if: ${{ matrix.os.prettyname == 'Windows' }}
+        # maybe it should be implemented as a build.py command
+        run: bazel --output_user_root C:/_bzl shutdown
+        shell: pwsh
